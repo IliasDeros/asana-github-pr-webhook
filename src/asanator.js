@@ -21,6 +21,20 @@ module.exports.addComment = async function (gid, comment) {
   }
 }
 
+module.exports.findTaskById = async function (id) {
+  try {
+    var options = createOptions()
+    var url = 'https://app.asana.com/api/1.0/tasks/' + id
+    log.debug(url, options)
+    var res = await axios.get(url, options)
+    log.debug(res)
+    return res && res.data && res.data.data ? res.data.data : res.data
+  } catch (error) {
+    log.error(error)
+    return null
+  }
+}
+
 module.exports.searchByDate = async function (before, after) {
   log.trace('searchByDate')
   try {

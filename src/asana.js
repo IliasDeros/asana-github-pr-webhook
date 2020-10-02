@@ -13,6 +13,16 @@ module.exports.addGithubPrToAsanaTask = async function (githubData, asanaData, r
   await asanator.addComment(asanaData.gid, comment)
 }
 
+module.exports.getAsanaTask = async function (id, replacementAsanator) {
+  log.trace('getAsanaTask')
+  if (replacementAsanator) {
+    asanator = replacementAsanator
+  }
+
+  const task = await asanator.findTaskById(id)
+  return task
+}
+
 module.exports.getMatchingAsanaTask = async function (id, replacementAsanator) {
   log.trace('getMatchingAsanaTask')
   if (replacementAsanator) {

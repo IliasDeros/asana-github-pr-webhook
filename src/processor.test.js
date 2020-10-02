@@ -17,28 +17,51 @@ const asanaTask = {
   'name': 'Ops Blog Review'
 }
 
-test('process test', async () => {
-  asanator.asanaAccessToken = 'temp'
-  githubator.githubAccessToken = 'temp'
+describe('#processWebhook', () => {
+  var data
 
-  asanator.searchByDate = jest.fn(() => { return [asanaTask] })
-  asanator.addComment = jest.fn(() => { })
-  githubator.addComment = jest.fn(() => { })
+  beforeEach(() => {
+    data = { ...eventData }
+  })
 
-  await processor.processWebhook(eventData, asanator, githubator)
+  test('process an asana url', async () => {
+    data.pull_request.body = '[Asana Task](https://app.asana.com/0/1186519733333322/955082368419833/f) description'
+    asanator.findTaskById = jest.fn(() => asanaTask)
+    asanator.addComment = jest.fn(() => {})
+    githubator.addComment = jest.fn(() => {})
 
-  expect(asanator.searchByDate).toBeCalled()
-  expect(asanator.addComment).toBeCalled()
-  expect(githubator.addComment).toBeCalled()
+    await processor.processWebhook(data, asanator, githubator)
+
+    expect(asanator.findTaskById).toBeCalledWith('955082368419833')
+    expect(asanator.addComment).toBeCalled()
+    expect(githubator.addComment).toBeCalled()
+  })
 })
 
-test('process test aborted', async () => {
-  asanator.asanaAccessToken = 'temp'
-  githubator.githubAccessToken = 'temp'
-  eventData.action = 'closed'
-  asanator.searchByDate = jest.fn(() => { })
+describe('#processWebhook4Digits', () => {
+  test('process test', async () => {
+    asanator.asanaAccessToken = 'temp'
+    githubator.githubAccessToken = 'temp'
 
-  await processor.processWebhook(eventData, asanator, githubator)
+    asanator.searchByDate = jest.fn(() => { return [asanaTask] })
+    asanator.addComment = jest.fn(() => { })
+    githubator.addComment = jest.fn(() => { })
 
-  expect(asanator.searchByDate).not.toBeCalled()
+    await processor.processWebhook4Digits(eventData, asanator, githubator)
+
+    expect(asanator.searchByDate).toBeCalled()
+    expect(asanator.addComment).toBeCalled()
+    expect(githubator.addComment).toBeCalled()
+  })
+
+  test('process test aborted', async () => {
+    asanator.asanaAccessToken = 'temp'
+    githubator.githubAccessToken = 'temp'
+    eventData.action = 'closed'
+    asanator.searchByDate = jest.fn(() => { })
+
+    await processor.processWebhook4Digits(eventData, asanator, githubator)
+
+    expect(asanator.searchByDate).not.toBeCalled()
+  })
 })

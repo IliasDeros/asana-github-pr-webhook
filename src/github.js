@@ -12,6 +12,11 @@ module.exports.getAsanaId = function (data) {
   return match(title) || match(body)
 }
 
+module.exports.getAsanaIdFromUrlInDescription = function (data) {
+  var body = data['pull_request']['body']
+  return findTaskIdFromURL(body)
+}
+
 module.exports.addAsanaTaskToGithubPr = async function (githubData, asanaData, replacementGithubator) {
   log.trace('addAsanaTaskToGithubPr')
   if (replacementGithubator) {
@@ -19,11 +24,19 @@ module.exports.addAsanaTaskToGithubPr = async function (githubData, asanaData, r
   }
   var url = 'https://app.asana.com/0/0/' + asanaData.gid
   var comment = '<strong>Linked Asana:</strong> ' + xmlescape(asanaData.name) + '\n<a href="' + url + '">' + url + '</a>'
-  await githubator.addComment(githubData.apiUrl, comment)
+  await githubator.addComment(githubData.commentsUrl, comment)
 }
 
 module.exports.shouldProcess = function (data) {
-  log.trace('shouldProcess')
+  if (data.action !== 'opened') {
+    return false
+  }
+
+  return findTaskIdFromURL(data.pull_request.body)
+}
+
+module.exports.shouldProcess4digits = function (data) {
+  log.trace('shouldProcess4digits')
   var action = data.action
   if (action !== 'edited' && action !== 'opened') {
     return false
@@ -49,4 +62,21 @@ function match (toMatch) {
   }
   var match = /^([0-9]{4,10})\s+.*/.exec(toMatch)
   return match != null ? match[1] : null
+}
+
+function findTaskIdFromURL (textWithAsanaUrl) {
+  if (!textWithAsanaUrl) {
+    return null
+  }
+
+  // Find url, eg: https://app.asana.com/0/<projectId>/<taskId>/f
+  const urlMatch = textWithAsanaUrl.match(/app\.asana\.com[/\d+]+/)
+  if (!urlMatch) {
+    return null
+  }
+
+  // Extract <taskId>
+  const [asanaUrl] = urlMatch
+  const idMatch = asanaUrl.match(/\d+/g)
+  return idMatch ? idMatch.pop() : null
 }
